@@ -209,6 +209,8 @@ composited by Kodi and no L5. Nor OpenCL: Hades does not use it.
 
 ## Phase 0.5: capture and compare tool
 
+Host tools in `tools/poc-s90d/` (its README has the log formats; `test_poc.py` checks them).
+
 - [ ] TV side: a logger that writes each received HDR10+ VSIF (and DRM
       InfoFrame) with a timestamp and, where there is one, the TV's frame
       or vsync counter, one packet per line, hex payload. If the TV only
@@ -219,14 +221,19 @@ composited by Kodi and no L5. Nor OpenCL: Hades does not use it.
 - [ ] PC side: a per-frame dump from Hades (a debug log added in this
       fork): frame number, flip sequence and timestamp from the page-flip
       event, the HDR10+ payload in hex. `kodi.log` alone is not enough.
-- [ ] Compare script: lines the TV log up with the PC dump and with
-      `hdr10plus_tool extract` of the source file, on the scene cuts
-      (the two clocks are not synced); reports byte differences, missing
-      or altered packets, and frame offsets at cuts. Can be written
-      before the TV side exists.
-- [ ] Frame-exact fallback: a synthetic HDR10+ clip, one still picture,
-      metadata switched between extremes at known frames, filmed at
-      240 fps. The TV may smooth metadata over time, which blunts it.
+      The format `compare_hdr10plus.py --pc` reads is fixed in the tools'
+      README; the Kodi side is not written yet.
+- [x] Compare script (`compare_hdr10plus.py`): lines the TV log up with
+      the PC dump and with `hdr10plus_tool extract` of the source file, on
+      the scene cuts (the two clocks are not synced); reports byte
+      differences, missing or altered packets, and frame offsets at cuts.
+      Tested on synthetic logs only.
+- [x] Frame-exact fallback (`make_timing_clip.py`): a synthetic HDR10+
+      clip, one still picture, metadata switched between extremes at known
+      frames, a marker and a frame counter in the picture, filmed at
+      240 fps. Read back by FFmpeg frame by frame; not yet seen on a TV.
+      The TV may smooth metadata over time, which blunts the single-frame
+      pulses, not the blocks.
 - [ ] Use them for every result below.
 
 ## Phase 1: transport
@@ -332,11 +339,11 @@ or the other partitions of its own disk. Secure Boot stays off for both
   Gaming Mode it needs a sudoers rule; check that `/etc` survives
   SteamOS updates). SteamOS updates may put SteamOS first again, which
   this layout expects.
-- **To SteamOS from Kodi:** not there yet. `hades-bootnext` knows only
-  Windows (`\EFI\Microsoft\Boot\bootmgfw.efi`). A `steamos` target that
-  matches SteamOS's loader (believed to be `\EFI\steamos\steamcl.efi`;
-  check with `efibootmgr -v`) and a power-menu entry after `kodi-9066` /
-  `kodi-9119` would do it: a small change in this fork.
+- **To SteamOS from Hades:** `hades-bootnext steamos` (this fork) sets
+  `BootNext` to the entry whose loader is `\EFI\steamos\steamcl.efi`
+  (check the path with `efibootmgr -v` on the SER7); then restart. From
+  SSH only: a power-menu entry after `kodi-9066` / `kodi-9119` is not
+  written (it needs a Kodi build).
 - **Where Hades lives:**
 
   | Option | Strength | Weakness |
